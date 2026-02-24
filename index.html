@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="widget-name" content="Live Events (MillerKnoll)">
+    <meta name="widget-description" content="Corporate live streaming hub for design townhalls, product launches and sales replays">
+    <title>MillerKnoll Live Events Plugin</title>
+    <style>
+        /* --- CSS STYLING (MillerKnoll Branding) --- */
+        :root {
+            /* MillerKnoll Brand Colors */
+            --mk-charcoal: #191919;
+            --mk-red: #E01933; /* Classic brand accent */
+            --mk-white: #FFFFFF;
+            --mk-gray-bg: #F5F5F7;
+
+            /* Semantic Mappings */
+            --sb-primary: var(--mk-charcoal);
+            --sb-accent: var(--mk-red);
+            --sb-text: var(--mk-charcoal);
+            --sb-bg: var(--mk-gray-bg);
+            --sb-card-bg: #FFFFFF;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Roboto, Arial, sans-serif;
+            background-color: var(--sb-bg);
+            color: var(--sb-text);
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Utility Classes */
+        .hidden { display: none !important; }
+
+        /* --- HERO BANNER --- */
+        .hero-banner {
+            width: 100%;
+            height: 220px;
+            /* Modern office / showroom aesthetic */
+            background-image: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            margin-bottom: -4px; 
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, rgba(25,25,25,0.9) 0%, rgba(25,25,25,0.3) 100%);
+            display: flex;
+            align-items: center;
+            padding: 0 40px;
+        }
+
+        .hero-title {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            letter-spacing: -0.5px;
+        }
+
+        /* --- WIDGET HEADER --- */
+        .widget-header {
+            background-color: var(--sb-primary);
+            color: var(--mk-white);
+            padding: 24px 24px 0 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap; 
+            gap: 20px;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 12px; }
+
+        .header-icon {
+            background-color: var(--sb-accent);
+            color: var(--mk-white);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+        }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .header-subtitle {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.7);
+            display: block;
+            margin-top: 4px;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 40px;
+        }
+
+        .cw-stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+
+        .cw-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--sb-accent);
+        }
+
+        .cw-stat-label {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        /* --- TABS / FILTERS --- */
+        .filter-bar {
+            display: flex;
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .filter-tab {
+            color: rgba(255,255,255,0.6);
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding-bottom: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .filter-tab:hover { color: white; }
+
+        .filter-tab.active {
+            color: white;
+        }
+
+        .filter-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            background-color: var(--sb-accent);
+            border-radius: 3px 3px 0 0;
+        }
+
+        /* --- CONTENT CONTAINER --- */
+        .content-container {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* --- LIST VIEW --- */
+        .event-list {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        @media (min-width: 768px) {
+            .event-list {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+                gap: 24px;
+            }
+        }
+
+        .event-card {
+            background: var(--sb-card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(25,25,25,0.08);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            border: 1px solid rgba(25,25,25,0.05);
+        }
+
+        .event-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(25,25,25,0.12);
+        }
+
+        .card-thumbnail {
+            height: 180px;
+            background-color: #eee;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .live-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background-color: var(--sb-accent);
+            color: var(--mk-white);
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 2;
+        }
+
+        .upcoming-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background-color: rgba(25, 25, 25, 0.85);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+        }
+
+        .archive-badge {
+            position: absolute;
+            top: 12px; right: 12px;
+            background-color: rgba(100, 116, 139, 0.9);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .card-content {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .event-date {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .event-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            color: var(--sb-primary);
+            line-height: 1.3;
+        }
+
+        .event-desc {
+            font-size: 0.95rem;
+            color: #475569;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+
+        .card-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #f1f5f9;
+            background-color: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .open-btn {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--sb-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        .open-btn::after { content: "→"; margin-left: 4px; transition: margin-left 0.2s; }
+        .event-card:hover .open-btn::after { margin-left: 6px; }
+
+        /* Calendar Button */
+        .calendar-btn {
+            background: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .calendar-btn:hover {
+            border-color: var(--sb-primary);
+            color: var(--sb-primary);
+            background-color: #f5f5f5;
+        }
+        .calendar-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+
+        /* --- DETAIL VIEW (CUSTOM PLAYER UI) --- */
+        .detail-wrapper {
+            padding: 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .custom-player-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            margin-bottom: 32px;
+        }
+
+        .player-background {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.9;
+        }
+
+        .player-gradient {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(25,25,25,0.2) 0%, rgba(25,25,25,0) 50%, rgba(10,10,10,0.95) 100%);
+        }
+
+        /* Top Left Logo Box */
+        .player-logo-box {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            width: 48px;
+            height: 48px;
+            background-color: var(--mk-red);
+            color: var(--mk-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            border-radius: 2px;
+        }
+
+        .player-text-overlay {
+            position: absolute;
+            bottom: 90px;
+            left: 24px;
+            color: white;
+            z-index: 10;
+        }
+        .player-brand-name { font-size: 1.5rem; font-weight: 700; display: block; letter-spacing: 0.5px; }
+        .player-sub-name { font-size: 1.25rem; font-weight: 300; opacity: 0.9; }
+
+        .player-controls {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            right: 24px;
+            height: 56px;
+            background-color: rgba(10, 10, 10, 0.9);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-radius: 6px;
+            backdrop-filter: blur(5px);
+        }
+
+        .control-btn { background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; margin-right: 20px; }
+        .control-btn svg { fill: white; width: 24px; height: 24px; }
+        .control-btn:hover svg { fill: var(--mk-red); }
+
+        .progress-track {
+            flex-grow: 1;
+            height: 4px;
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            margin: 0 20px;
+            position: relative;
+            cursor: pointer;
+        }
+        .progress-fill {
+            width: 35%;
+            height: 100%;
+            background-color: var(--mk-red);
+            border-radius: 2px;
+        }
+
+        .time-display {
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-right: 20px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .right-controls { display: flex; gap: 16px; align-items: center; }
+
+        .detail-info {
+            background: var(--sb-card-bg);
+            border-radius: 8px;
+            padding: 32px;
+            box-shadow: 0 4px 12px rgba(25,25,25,0.08);
+        }
+
+        .detail-title { margin: 0 0 8px 0; font-size: 2rem; color: var(--sb-primary); }
+        .detail-meta { color: #64748b; font-size: 1rem; margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e2e8f0; }
+        .back-btn { background: none; border: none; color: var(--sb-primary); font-weight: 700; cursor: pointer; padding: 0; margin-bottom: 24px; display: flex; align-items: center; font-size: 1rem; }
+        .back-btn:hover { text-decoration: underline; opacity: 0.8; }
+
+        .loader { text-align: center; padding: 60px; color: var(--sb-primary); opacity: 0.7; font-size: 1.2rem;}
+
+    </style>
+</head>
+<body>
+
+    <div id="app">
+
+        <div class="hero-banner">
+            <div class="hero-overlay">
+                <h1 class="hero-title">MillerKnoll Streaming Hub</h1>
+            </div>
+        </div>
+
+        <div id="mainHeader" class="widget-header">
+            <div class="header-top">
+                <div class="header-left">
+                    <div class="header-icon">MK</div>
+                    <div>
+                        <div class="header-title">Live Events</div>
+                        <span class="header-subtitle" data-i18n="subtitle">Design Showcases &amp; Dealer Townhalls</span>
+                    </div>
+                </div>
+
+                <div class="header-stats">
+                    <div class="cw-stat-item">
+                        <span id="statLive" class="cw-stat-value">0</span>
+                        <span class="cw-stat-label" data-i18n="statLive">Live Now</span>
+                    </div>
+                    <div class="cw-stat-item">
+                        <span id="statUpcoming" class="cw-stat-value">0</span>
+                        <span class="cw-stat-label" data-i18n="statUpcoming">Upcoming</span>
+                    </div>
+                    <div class="cw-stat-item">
+                        <span id="statReplays" class="cw-stat-value">0</span>
+                        <span class="cw-stat-label" data-i18n="statReplays">Replays</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="filter-tab active" onclick="app.filterEvents('all', this)" data-i18n="filterAll">All Events</div>
+                <div class="filter-tab" onclick="app.filterEvents('live', this)" data-i18n="filterLive">Live Now</div>
+                <div class="filter-tab" onclick="app.filterEvents('upcoming', this)" data-i18n="filterUpcoming">Upcoming</div>
+                <div class="filter-tab" onclick="app.filterEvents('archive', this)" data-i18n="filterArchive">On Demand</div>
+            </div>
+        </div>
+
+        <div class="content-container">
+            <div id="loader" class="loader" data-i18n="loading">Loading events...</div>
+
+            <div id="listView" class="hidden">
+                <div id="eventListContainer" class="event-list"></div>
+                <div id="noEventsMessage" class="hidden" style="text-align:center; opacity: 0.6; padding: 40px;" data-i18n="noEvents">No events in this category.</div>
+            </div>
+
+            <div id="detailView" class="hidden detail-wrapper">
+                <button class="back-btn" onclick="app.showList()" data-i18n="back">← Back to Overview</button>
+
+                <div class="custom-player-container">
+                    <div class="player-background" id="playerBg" style="background-image: url('');"></div>
+                    <div class="player-gradient"></div>
+                    <div class="player-logo-box">MK</div>
+                    <div class="player-text-overlay">
+                        <span class="player-brand-name">MillerKnoll</span>
+                        <span class="player-sub-name">Design & Sales</span>
+                    </div>
+                    <div class="player-controls">
+                        <button class="control-btn">
+                            <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </button>
+                        <button class="control-btn">
+                            <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                        </button>
+                        <div class="progress-track"><div class="progress-fill"></div></div>
+                        <div class="time-display">00:00</div>
+                        <div class="right-controls">
+                            <button class="control-btn" style="margin:0;"><svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-info">
+                    <h2 id="detailTitle" class="detail-title"></h2>
+                    <div id="detailDate" class="detail-meta"></div>
+                    <p id="detailDesc" style="line-height: 1.6; font-size: 1.1rem; color:#334155;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Language detection ---
+        const LANG = (() => {
+          const l = navigator.language || '';
+          if (l.startsWith('de')) return 'de';
+          if (l.startsWith('fr')) return 'fr';
+          if (l.startsWith('es')) return 'es';
+          if (l.startsWith('ja')) return 'ja';
+          if (l === 'en-GB')      return 'en-GB';
+          return 'en-US';
+        })();
+        document.documentElement.lang = LANG;
+        const LOCALE = {
+          'de': 'de-DE', 'fr': 'fr-FR', 'es': 'es-ES',
+          'ja': 'ja-JP', 'en-GB': 'en-GB', 'en-US': 'en-US'
+        }[LANG];
+        const CURRENCY = {
+          'de': 'EUR', 'fr': 'EUR', 'es': 'EUR',
+          'ja': 'JPY', 'en-GB': 'GBP', 'en-US': 'USD'
+        }[LANG];
+        const HOUR12 = LANG === 'en-GB' || LANG === 'en-US';
+
+        // --- Translations ---
+        const T = {
+            de: {
+                subtitle:       'Design Showcases & Händler-Townhalls',
+                statLive:       'Jetzt live',
+                statUpcoming:   'Demnächst',
+                statReplays:    'Aufzeichnungen',
+                filterAll:      'Alle Events',
+                filterLive:     'Jetzt live',
+                filterUpcoming: 'Demnächst',
+                filterArchive:  'Auf Abruf',
+                loading:        'Events werden geladen...',
+                noEvents:       'Keine Events in dieser Kategorie.',
+                back:           '← Zurück zur Übersicht',
+                openBtn:        'Öffnen',
+                calendarBtn:    'Zum Kalender',
+                watchBtn:       'Aufzeichnung ansehen',
+                badgeUpcoming:  'Demnächst',
+                badgeArchive:   'Auf Abruf',
+                calendarAlert:  'Event „${title}" wurde zum Kalender hinzugefügt! (Simulation)',
+                errorLoad:      'Events konnten nicht geladen werden.',
+            },
+            fr: {
+                subtitle:       'Vitrines de Design & Townhalls Revendeurs',
+                statLive:       'En direct',
+                statUpcoming:   'À venir',
+                statReplays:    'Replays',
+                filterAll:      'Tous les événements',
+                filterLive:     'En direct',
+                filterUpcoming: 'À venir',
+                filterArchive:  'À la demande',
+                loading:        'Chargement des événements...',
+                noEvents:       'Aucun événement dans cette catégorie.',
+                back:           '← Retour à l\'aperçu',
+                openBtn:        'Ouvrir',
+                calendarBtn:    'Ajouter au calendrier',
+                watchBtn:       'Visionner le replay',
+                badgeUpcoming:  'À venir',
+                badgeArchive:   'À la demande',
+                calendarAlert:  'L\'événement « ${title} » a été ajouté à votre calendrier ! (Simulation)',
+                errorLoad:      'Impossible de charger les événements.',
+            },
+            es: {
+                subtitle:       'Exhibiciones de Diseño y Townhalls de Distribuidores',
+                statLive:       'En directo',
+                statUpcoming:   'Próximamente',
+                statReplays:    'Grabaciones',
+                filterAll:      'Todos los eventos',
+                filterLive:     'En directo',
+                filterUpcoming: 'Próximamente',
+                filterArchive:  'Bajo demanda',
+                loading:        'Cargando eventos...',
+                noEvents:       'No hay eventos en esta categoría.',
+                back:           '← Volver a la vista general',
+                openBtn:        'Abrir',
+                calendarBtn:    'Añadir al calendario',
+                watchBtn:       'Ver grabación',
+                badgeUpcoming:  'Próximamente',
+                badgeArchive:   'Bajo demanda',
+                calendarAlert:  'El evento «${title}» se ha añadido a tu calendario. (Simulación)',
+                errorLoad:      'No se pudieron cargar los eventos.',
+            },
+            ja: {
+                subtitle:       'デザインショーケース＆ディーラー・タウンホール',
+                statLive:       'ライブ中',
+                statUpcoming:   '予定',
+                statReplays:    'リプレイ',
+                filterAll:      'すべてのイベント',
+                filterLive:     'ライブ中',
+                filterUpcoming: '予定',
+                filterArchive:  'オンデマンド',
+                loading:        'イベントを読み込んでいます...',
+                noEvents:       'このカテゴリーにイベントはありません。',
+                back:           '← 一覧に戻る',
+                openBtn:        '開く',
+                calendarBtn:    'カレンダーに追加',
+                watchBtn:       '録画を視聴',
+                badgeUpcoming:  '予定',
+                badgeArchive:   'オンデマンド',
+                calendarAlert:  'イベント「${title}」をカレンダーに追加しました！（シミュレーション）',
+                errorLoad:      'イベントを読み込めませんでした。',
+            },
+            'en-GB': {
+                subtitle:       'Design Showcases & Dealer Townhalls',
+                statLive:       'Live Now',
+                statUpcoming:   'Upcoming',
+                statReplays:    'Replays',
+                filterAll:      'All Events',
+                filterLive:     'Live Now',
+                filterUpcoming: 'Upcoming',
+                filterArchive:  'On Demand',
+                loading:        'Loading events...',
+                noEvents:       'No events in this category.',
+                back:           '← Back to Overview',
+                openBtn:        'Open',
+                calendarBtn:    'Add to Calendar',
+                watchBtn:       'Watch Recording',
+                badgeUpcoming:  'Upcoming',
+                badgeArchive:   'On Demand',
+                calendarAlert:  'Event “${title}” has been added to your calendar! (Simulation)',
+                errorLoad:      'Could not load events.',
+            },
+            'en-US': {
+                subtitle:       'Design Showcases & Dealer Townhalls',
+                statLive:       'Live Now',
+                statUpcoming:   'Upcoming',
+                statReplays:    'Replays',
+                filterAll:      'All Events',
+                filterLive:     'Live Now',
+                filterUpcoming: 'Upcoming',
+                filterArchive:  'On Demand',
+                loading:        'Loading events...',
+                noEvents:       'No events in this category.',
+                back:           '← Back to Overview',
+                openBtn:        'Open',
+                calendarBtn:    'Add to Calendar',
+                watchBtn:       'Watch Recording',
+                badgeUpcoming:  'Upcoming',
+                badgeArchive:   'On Demand',
+                calendarAlert:  'Event "${title}" has been added to your calendar! (Simulation)',
+                errorLoad:      'Could not load events.',
+            },
+        };
+        const t = T[LANG] ?? T['en-US'];
+
+        // --- Template helper for interpolated strings ---
+        function tr(key, vars = {}) {
+            let s = t[key] || key;
+            for (const [k, v] of Object.entries(vars)) {
+                s = s.replace(`\${${k}}`, v);
+            }
+            return s;
+        }
+
+        const LANG_SUFFIX = { 'de': 'De', 'fr': 'Fr', 'es': 'Es', 'ja': 'Ja', 'en-GB': '', 'en-US': '' };
+        function loc(obj, key) {
+            const suffix = LANG_SUFFIX[LANG] || '';
+            return (suffix ? obj[key + suffix] : undefined) ?? obj[key];
+        }
+
+        // --- Apply translations to static HTML ---
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (t[key] !== undefined) el.textContent = t[key];
+            });
+        }
+
+        // --- Date formatters ---
+        const listDateFormatter = new Intl.DateTimeFormat(LOCALE, {
+            month: 'short', day: 'numeric', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: HOUR12,
+        });
+
+        const detailDateFormatter = new Intl.DateTimeFormat(LOCALE, {
+            weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: HOUR12,
+        });
+
+        const CONFIG = {
+            apiEndpoint: 'https://your-backend-service.example.com/api/events',
+            useMockData: true
+        };
+
+        const MOCK_DATA = [
+            {
+                id: 1,
+                title: 'MillerKnoll Design Innovation',
+                titleDe: 'MillerKnoll Design-Innovation',
+                titleFr: 'Innovation Design MillerKnoll',
+                titleEs: 'Innovación en Diseño MillerKnoll',
+                titleJa: 'MillerKnoll デザインイノベーション',
+                date: new Date(new Date().getTime() - 1000 * 60 * 30).toISOString(),
+                description: 'Live demonstration of our new ergonomic seating lines. Broadcasting from the Fulton Market showroom.',
+                descriptionDe: 'Live-Demonstration unserer neuen ergonomischen Sitzmöbel. Übertragung aus dem Showroom im Fulton Market.',
+                descriptionFr: 'Démonstration en direct de nos nouvelles gammes de sièges ergonomiques. En direct du showroom de Fulton Market.',
+                descriptionEs: 'Demostración en vivo de nuestras nuevas líneas de sillería ergonómica. Transmisión desde el showroom de Fulton Market.',
+                descriptionJa: '新しい人間工学に基づいたシーティングラインのライブデモ。フルトンマーケットのショールームから中継。',
+                isLive: true,
+                status: 'live',
+                imageUrl: 'https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: 2,
+                title: 'Global Dealer Sales Training',
+                titleDe: 'Globales Händler-Vertriebstraining',
+                titleFr: 'Formation commerciale mondiale des revendeurs',
+                titleEs: 'Formación de ventas global para distribuidores',
+                titleJa: 'グローバルディーラー向けセールストレーニング',
+                date: '2026-03-15T14:00:00.000Z',
+                description: 'Deep dive into the new Q3 product catalog. Mandatory for global sales partners.',
+                descriptionDe: 'Ein tiefer Einblick in den neuen Q3-Produktkatalog. Pflichtveranstaltung für globale Vertriebspartner.',
+                descriptionFr: 'Présentation approfondie du nouveau catalogue produits Q3. Obligatoire pour les partenaires commerciaux mondiaux.',
+                descriptionEs: 'Análisis detallado del nuevo catálogo de productos del tercer trimestre. Obligatorio para socios de ventas globales.',
+                descriptionJa: 'Q3の新製品カタログの詳細。グローバルセールスパートナー必須。',
+                isLive: false,
+                status: 'upcoming',
+                imageUrl: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: 3,
+                title: 'Workplace Research & Ergonomics',
+                titleDe: 'Arbeitsplatzforschung & Ergonomie',
+                titleFr: 'Recherche sur le lieu de travail et ergonomie',
+                titleEs: 'Investigación del lugar de trabajo y ergonomía',
+                titleJa: 'ワークプレイスリサーチと人間工学',
+                date: '2026-03-20T11:00:00.000Z',
+                description: 'A research-backed workshop on posture, wellness, and designing healthy modern workspaces.',
+                descriptionDe: 'Ein forschungsbasierter Workshop über Körperhaltung, Wohlbefinden und die Gestaltung gesunder moderner Arbeitsplätze.',
+                descriptionFr: 'Un atelier basé sur la recherche concernant la posture, le bien-être et la conception d\'espaces de travail modernes et sains.',
+                descriptionEs: 'Un taller respaldado por investigaciones sobre postura, bienestar y el diseño de espacios de trabajo modernos y saludables.',
+                descriptionJa: '姿勢、ウェルネス、健康的なモダンワークスペースの設計に関する、研究に基づいたワークショップ。',
+                isLive: false,
+                status: 'upcoming',
+                imageUrl: 'https://images.unsplash.com/photo-1581428982868-e410dd98bfc0?auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: 4,
+                title: 'All-Hands: Asia Pacific',
+                titleDe: 'All-Hands: Asien-Pazifik',
+                titleFr: 'Réunion générale : Asie-Pacifique',
+                titleEs: 'Todo el equipo: Asia Pacífico',
+                titleJa: '全社会議：アジア太平洋',
+                date: '2026-04-05T09:00:00.000Z',
+                description: 'Regional updates from our Singapore and Tokyo teams on showroom expansions.',
+                descriptionDe: 'Regionale Updates unserer Teams aus Singapur und Tokio zu Showroom-Erweiterungen.',
+                descriptionFr: 'Actualités régionales de nos équipes de Singapour et Tokyo concernant les extensions de showrooms.',
+                descriptionEs: 'Actualizaciones regionales de nuestros equipos de Singapur y Tokio sobre expansiones de showrooms.',
+                descriptionJa: 'シンガポール・東京チームからのショールーム拡大に関する地域アップデート。',
+                isLive: false,
+                status: 'upcoming',
+                imageUrl: 'https://images.unsplash.com/photo-1600607686527-6fb886090705?auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: 5,
+                title: 'The Future of Contract Furniture',
+                titleDe: 'Die Zukunft der Objektmöbel',
+                titleFr: 'L\'avenir du mobilier de bureau',
+                titleEs: 'El futuro del mobiliario para empresas',
+                titleJa: 'コントラクト家具の未来',
+                date: '2026-04-12T10:00:00.000Z',
+                description: 'Exploring the impact of hybrid work models on architectural design and furniture sales.',
+                descriptionDe: 'Untersuchung der Auswirkungen hybrider Arbeitsmodelle auf Architekturdesign und Möbelvertrieb.',
+                descriptionFr: 'Exploration de l\'impact des modèles de travail hybrides sur la conception architecturale et les ventes de mobilier.',
+                descriptionEs: 'Exploración del impacto de los modelos de trabajo híbridos en el diseño arquitectónico y las ventas de mobiliario.',
+                descriptionJa: 'ハイブリッドワークモデルが建築デザインと家具販売に与える影響を探る。',
+                isLive: false,
+                status: 'upcoming',
+                imageUrl: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: 6,
+                title: 'Sustainability Goals 2030',
+                titleDe: 'Nachhaltigkeitsziele 2030',
+                titleFr: 'Objectifs de durabilité 2030',
+                titleEs: 'Objetivos de sostenibilidad 2030',
+                titleJa: 'サステナビリティ目標2030',
+                date: '2026-04-22T09:00:00.000Z',
+                description: 'Our path to incorporating ocean-bound plastics and achieving net-zero emissions.',
+                descriptionDe: 'Unser Weg zur Einbindung von Ocean-Bound-Plastik und zum Erreichen von Netto-Null-Emissionen.',
+                descriptionFr: 'Notre parcours pour intégrer les plastiques récupérés dans les océans et atteindre l\'objectif zéro émission nette.',
+                descriptionEs: 'Nuestro camino para incorporar plásticos procedentes del océano y lograr cero emisiones netas.',
+                descriptionJa: '海洋プラスチックの導入とネットゼロエミッション達成への道筋。',
+                isLive: false,
+                status: 'upcoming',
+                imageUrl: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=800&q=80'
+            },
+            /* --- ARCHIVED EVENTS --- */
+            {
+                id: 10,
+                title: 'Year End Results 2025',
+                titleDe: 'Jahresergebnisse 2025',
+                titleFr: "Résultats de fin d'année 2025",
+                titleEs: 'Resultados de fin de año 2025',
+                titleJa: '2025年度決算報告',
+                date: '2025-12-15T10:00:00.000Z',
+                description: 'Review of the fiscal year 2025 and dealer network growth.',
+                descriptionDe: 'Rückblick auf das Geschäftsjahr 2025 und das Wachstum unseres Händlernetzwerks.',
+                descriptionFr: 'Bilan de l\'exercice 2025 et croissance du réseau de revendeurs.',
+                descriptionEs: 'Revisión del ejercicio fiscal 2025 y crecimiento de la red de distribuidores.',
+                descriptionJa: '2025年度の振り返りとディーラーネットワークの成長報告。',
+                isLive: false,
+                status: 'archive',
+                imageUrl: 'https://images.unsplash.com/photo-1497215898147-5dd40bce868f?auto=format&fit=crop&w=800&q=80'
+            },
+            {
+                id: 11,
+                title: 'Dealer Leadership Summit',
+                titleDe: 'Händler-Führungsgipfel',
+                titleFr: 'Sommet des dirigeants revendeurs',
+                titleEs: 'Cumbre de liderazgo de distribuidores',
+                titleJa: 'ディーラー・リーダーシップ・サミット',
+                date: '2025-11-20T14:00:00.000Z',
+                description: 'Key takeaways from the annual leadership summit in Chicago.',
+                descriptionDe: 'Wichtigste Erkenntnisse des jährlichen Führungsgipfels in Chicago.',
+                descriptionFr: 'Points clés du sommet annuel des dirigeants à Chicago.',
+                descriptionEs: 'Conclusiones clave de la cumbre anual de liderazgo en Chicago.',
+                descriptionJa: 'シカゴで開催された年次リーダーシップサミットの主なポイント。',
+                isLive: false,
+                status: 'archive',
+                imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80'
+            }
+        ];
+
+        const app = {
+            allEvents: [],
+            currentFilter: 'all',
+
+            init: function() {
+                applyTranslations();
+                this.loadEvents();
+            },
+
+            loadEvents: async function() {
+                try {
+                    if (CONFIG.useMockData) {
+                        await new Promise(r => setTimeout(r, 600));
+                        this.allEvents = MOCK_DATA;
+                    } else {
+                        const response = await fetch(CONFIG.apiEndpoint);
+                        this.allEvents = await response.json();
+                    }
+                    this.updateStats();
+                    this.filterEvents('all', document.querySelector('.filter-tab.active'));
+                } catch (error) {
+                    console.error("Load error:", error);
+                    document.getElementById('loader').innerText = t.errorLoad;
+                }
+            },
+
+            updateStats: function() {
+                const liveCount = this.allEvents.filter(e => e.status === 'live' || e.isLive).length;
+                const upcomingCount = this.allEvents.filter(e => e.status === 'upcoming').length;
+                const replayCount = this.allEvents.filter(e => e.status === 'archive').length;
+
+                document.getElementById('statLive').innerText = liveCount;
+                document.getElementById('statUpcoming').innerText = upcomingCount;
+                document.getElementById('statReplays').innerText = replayCount;
+            },
+
+            filterEvents: function(category, tabElement) {
+                // Update tabs UI
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                if(tabElement) tabElement.classList.add('active');
+
+                this.currentFilter = category;
+
+                let filtered = [];
+                if (category === 'all') {
+                    filtered = this.allEvents.filter(e => e.status !== 'archive');
+                } else if (category === 'live') {
+                    filtered = this.allEvents.filter(e => e.status === 'live' || e.isLive);
+                } else if (category === 'upcoming') {
+                    filtered = this.allEvents.filter(e => e.status === 'upcoming');
+                } else if (category === 'archive') {
+                    filtered = this.allEvents.filter(e => e.status === 'archive');
+                }
+
+                this.renderList(filtered);
+            },
+
+            renderList: function(events) {
+                const container = document.getElementById('eventListContainer');
+                container.innerHTML = '';
+                document.getElementById('loader').classList.add('hidden');
+
+                if (events.length === 0) {
+                    document.getElementById('noEventsMessage').classList.remove('hidden');
+                    document.getElementById('listView').classList.remove('hidden');
+                    return;
+                } else {
+                    document.getElementById('noEventsMessage').classList.add('hidden');
+                }
+
+                // Sorting
+                events.sort((a, b) => {
+                    if (a.isLive && !b.isLive) return -1;
+                    if (!a.isLive && b.isLive) return 1;
+                    return new Date(a.date) - new Date(b.date);
+                });
+
+                events.forEach(event => {
+                    const card = document.createElement('div');
+                    card.className = `event-card`;
+                    card.onclick = (e) => {
+                        if(e.target.closest('.calendar-btn')) return;
+                        this.showDetail(event);
+                    };
+
+                    const dateObj = new Date(event.date);
+                    const dateStr = listDateFormatter.format(dateObj);
+
+                    const bgStyle = `background-image: url('${event.imageUrl}');`;
+
+                    let badgeHtml = '';
+                    if (event.isLive || event.status === 'live') {
+                        badgeHtml = `<span class="live-badge">● LIVE</span>`;
+                    } else if (event.status === 'upcoming') {
+                        badgeHtml = `<span class="upcoming-badge">${t.badgeUpcoming}</span>`;
+                    } else if (event.status === 'archive') {
+                        badgeHtml = `<span class="archive-badge">${t.badgeArchive}</span>`;
+                    }
+
+                    // Action Button Logic
+                    let actionHtml = '';
+                    if (event.status === 'upcoming') {
+                        actionHtml = `
+                            <button class="calendar-btn" onclick="app.addToCalendar(event, '${loc(event, 'title').replace(/'/g, "\\'")}')">
+                                <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5h5v5h-5z"/></svg>
+                                ${t.calendarBtn}
+                            </button>
+                        `;
+                    } else if (event.status === 'archive') {
+                         actionHtml = `
+                            <button class="calendar-btn" style="border:none; padding-left:0;">
+                                <span style="font-size:0.8rem;">${t.watchBtn}</span>
+                            </button>
+                        `;
+                    }
+
+                    card.innerHTML = `
+                        <div class="card-thumbnail" style="${bgStyle}">
+                            ${badgeHtml}
+                        </div>
+                        <div class="card-content">
+                            <span class="event-date">${dateStr}</span>
+                            <h4 class="event-title">${loc(event, 'title')}</h4>
+                            <p class="event-desc">${loc(event, 'description')}</p>
+                        </div>
+                        <div class="card-footer">
+                            <span class="open-btn">${t.openBtn}</span>
+                            ${actionHtml}
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                document.getElementById('listView').classList.remove('hidden');
+            },
+
+            addToCalendar: function(e, title) {
+                e.stopPropagation();
+                alert(tr('calendarAlert', { title }));
+            },
+
+            showDetail: function(event) {
+                document.getElementById('mainHeader').classList.add('hidden');
+                document.querySelector('.hero-banner').classList.add('hidden');
+                document.getElementById('listView').classList.add('hidden');
+                document.getElementById('detailView').classList.remove('hidden');
+
+                document.getElementById('detailTitle').innerText = loc(event, 'title');
+                document.getElementById('detailDesc').innerText = loc(event, 'description');
+
+                const dateStr = detailDateFormatter.format(new Date(event.date));
+                document.getElementById('detailDate').innerText = dateStr;
+
+                document.getElementById('playerBg').style.backgroundImage = `url('${event.imageUrl}')`;
+
+                document.querySelector('.player-brand-name').innerText = loc(event, 'title').split(' ')[0] || 'MillerKnoll';
+                document.querySelector('.player-sub-name').innerText = loc(event, 'title').substring(loc(event, 'title').indexOf(' ')+1) || 'Design & Sales';
+
+                window.scrollTo(0,0);
+            },
+
+            showList: function() {
+                document.getElementById('detailView').classList.add('hidden');
+                document.getElementById('listView').classList.remove('hidden');
+                document.getElementById('mainHeader').classList.remove('hidden');
+                document.querySelector('.hero-banner').classList.remove('hidden');
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>
